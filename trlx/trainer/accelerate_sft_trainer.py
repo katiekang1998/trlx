@@ -43,7 +43,7 @@ class AccelerateSFTTrainer(AccelerateRLTrainer):
             from_fn = AutoModelForCausalLM.from_config
 
         model = from_fn(config.model.model_path)
-
+        
         if config.model.peft_config is not None:
             # Initialize the peft adapter
             import peft

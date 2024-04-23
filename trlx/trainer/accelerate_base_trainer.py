@@ -205,15 +205,15 @@ class AccelerateRLTrainer(BaseRLTrainer):
             **self.config.optimizer.kwargs,
         )
 
-        if "bitsandbytes" in optimizer.__class__.__module__:
-            # Force 32-bit `nn.Embedding` weights for stability. See discussion:
-            # https://github.com/huggingface/transformers/issues/14819#issuecomment-1016017746
-            from bitsandbytes.optim import GlobalOptimManager
+        # if "bitsandbytes" in optimizer.__class__.__module__:
+        #     # Force 32-bit `nn.Embedding` weights for stability. See discussion:
+        #     # https://github.com/huggingface/transformers/issues/14819#issuecomment-1016017746
+        #     from bitsandbytes.optim import GlobalOptimManager
 
-            manager = GlobalOptimManager.get_instance()
-            for module in self.model.modules():
-                if isinstance(module, torch.nn.Embedding):
-                    manager.register_module_override(module, "weight", {"optim_bits": 32})
+        #     manager = GlobalOptimManager.get_instance()
+        #     for module in self.model.modules():
+        #         if isinstance(module, torch.nn.Embedding):
+        #             manager.register_module_override(module, "weight", {"optim_bits": 32})
 
         return optimizer
 
@@ -761,7 +761,6 @@ class AccelerateRLTrainer(BaseRLTrainer):
                     forward_time = 0.0
                     backward_time = 0.0
                     stats_accum = []
-                    assert(len(minibatch) == 1)
                     for microbatch in minibatch:
                         with self._accumulate():
                             forward_time -= time()
