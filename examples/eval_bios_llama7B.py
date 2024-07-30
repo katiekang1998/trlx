@@ -67,7 +67,7 @@ def main(hparams={}):
 
     # config.train.epochs = 100
     config.train.project_name = "trlx_eval"
-    config.train.run_name = "eval"
+    config.train.run_name = "eval" 
 
     config.tokenizer.tokenizer_path = "NousResearch/Llama-2-7b-hf"
 

@@ -451,22 +451,41 @@ class AcceleratePPOTrainer(AccelerateRLTrainer):
                     #     import IPython; IPython.embed()
                     # KATIE: EMBED HERE TO LOOK AT MODEL PREDICTIONS
                     # TODO(dahoas): When hydra model works need to also support generation on hydra head
+                    # if self.accelerator.is_main_process:
+                    #     import IPython; IPython.embed()
                     if self.kl_ctl.value != 0:
-                        if hasattr(self.model, "frozen_head") or self.model.peft_type:
-                            ref_logits = self.model.forward_hydra(
-                                all_tokens,
-                                attention_mask=attention_mask,
-                                position_ids=position_ids,
-                                return_dict=True,
-                            ).logits
+                        if type(self.model) == torch.nn.parallel.DistributedDataParallel:
+                            if hasattr(self.model.module, "frozen_head") or self.model.module.peft_type:
+                                ref_logits = self.model.module.forward_hydra(
+                                    all_tokens,
+                                    attention_mask=attention_mask,
+                                    position_ids=position_ids,
+                                    return_dict=True,
+                                ).logits
+                            else:
+                                ref_logits = self.ref_model(
+                                    all_tokens,
+                                    attention_mask=attention_mask,
+                                    position_ids=position_ids,
+                                    return_dict=True,
+                                ).logits
+                                ref_logits = ref_logits.to(device)
                         else:
-                            ref_logits = self.ref_model(
-                                all_tokens,
-                                attention_mask=attention_mask,
-                                position_ids=position_ids,
-                                return_dict=True,
-                            ).logits
-                            ref_logits = ref_logits.to(device)
+                            if hasattr(self.model, "frozen_head") or self.model.peft_type:
+                                ref_logits = self.model.forward_hydra(
+                                    all_tokens,
+                                    attention_mask=attention_mask,
+                                    position_ids=position_ids,
+                                    return_dict=True,
+                                ).logits
+                            else:
+                                ref_logits = self.ref_model(
+                                    all_tokens,
+                                    attention_mask=attention_mask,
+                                    position_ids=position_ids,
+                                    return_dict=True,
+                                ).logits
+                                ref_logits = ref_logits.to(device)
 
             if self.kl_ctl.value != 0:
                 if self.config.model.model_arch_type == "seq2seq":

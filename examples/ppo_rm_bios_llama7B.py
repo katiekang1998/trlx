@@ -53,7 +53,9 @@ def main(hparams={}):
     config.model.FALSE_FACT_REWARD = FALSE_FACT_REWARD
 
 
-    config.model.model_path = "ckpts/sft_bios_new_llama7B_2/checkpoint_02000/hf_model"+"merged"
+    # config.model.model_path = "ckpts/sft_bios_new_llama7B_2/checkpoint_02000/hf_model"+"merged"
+    config.model.model_path = "/data/katie_kang/llm_hallucinations/examples_cleaned/ckpts/sft_wikibios/checkpoint_02000/hf_model"+"merged"
+
     config.tokenizer.tokenizer_path = "NousResearch/Llama-2-7b-hf"
 
     config.train.checkpoint_dir = f"ckpts/ppo_rm_bios_llama7B_true{TRUE_FACT_REWARD}_false{FALSE_FACT_REWARD}_kl0pt5_longGen"
@@ -115,7 +117,9 @@ def main(hparams={}):
         rw_tokenizer.pad_token = "<|padding|>"
 
     
-    atmoic_facts_model = AutoModelForCausalLM.from_pretrained("ckpts/sft_atomic_facts_llama7B/checkpoint_01000/hf_model/")
+    # atmoic_facts_model = AutoModelForCausalLM.from_pretrained("ckpts/sft_atomic_facts_llama7B/checkpoint_01000/hf_model/")
+    
+    atmoic_facts_model = AutoModelForCausalLM.from_pretrained("/data/katie_kang/llm_hallucinations/examples_cleaned/ckpts/decompose_atomic_facts/checkpoint_01000/hf_model/")
     atmoic_facts_model.eval()
     atmoic_facts_model.to("cuda:1")
 
@@ -159,7 +163,7 @@ def main(hparams={}):
                 input_ids = rw_tokenizer.pad(good_outputs_batch, return_tensors="pt").input_ids
                 input_ids = input_ids.to("cuda:1")
                 with torch.no_grad():
-                    generations_tokens = atmoic_facts_model.generate(input_ids=input_ids, do_sample=False, max_new_tokens=200)
+                    generations_tokens = atmoic_facts_model.generate(input_ids=input_ids, do_sample=False, max_new_tokens=200, pad_token_id=rw_tokenizer.pad_token_id)
                     generations = rw_tokenizer.batch_decode(generations_tokens[:, input_ids.shape[1]:], skip_special_tokens=True)
                     atomic_facts_all.append(generations)
             atomic_facts_all = np.concatenate(atomic_facts_all)

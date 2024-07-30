@@ -75,13 +75,14 @@ class PreTrainedModelWrapper(nn.Module, transformers.utils.PushToHubMixin):
             self.forward_kwargs = None
         else:
             self.forward_kwargs = inspect.getfullargspec(base_model.forward).args
+            
 
         self.is_loaded_in_8bit = getattr(base_model, "is_loaded_in_8bit", False)
-        if self.is_loaded_in_8bit:
-            # TODO(glerzing): Fully test and support loading in 8-bit
-            raise NotImplementedError(
-                "`is_loaded_in_8bit` is an experimental feature not yet fully supported. Please do not use it."
-            )
+        # if self.is_loaded_in_8bit:
+        #     # TODO(glerzing): Fully test and support loading in 8-bit
+        #     raise NotImplementedError(
+        #         "`is_loaded_in_8bit` is an experimental feature not yet fully supported. Please do not use it."
+        #     )
         self.peft_config = peft_config
         self.peft_type = peft_config.peft_type if peft_config else None
 

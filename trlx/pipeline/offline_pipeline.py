@@ -178,7 +178,6 @@ class PromptPipeline(BasePipeline):
             for key in xs[0]:
                 if key != "input_ids" and key != "attention_mask":
                     out[key] = [x[key] for x in xs]
-
             return out
 
         # Since all data is already pre-processed, no need to have

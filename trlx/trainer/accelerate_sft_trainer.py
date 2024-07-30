@@ -11,7 +11,8 @@ from trlx.pipeline.offline_pipeline import (
 )
 from trlx.trainer import register_trainer
 from trlx.trainer.accelerate_base_trainer import AccelerateRLTrainer
-
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp.wrap import enable_wrap, wrap
 
 @dataclass
 @register_method
@@ -43,7 +44,7 @@ class AccelerateSFTTrainer(AccelerateRLTrainer):
             from_fn = AutoModelForCausalLM.from_config
 
         model = from_fn(config.model.model_path)
-
+        
         if config.model.peft_config is not None:
             # Initialize the peft adapter
             import peft
@@ -77,12 +78,27 @@ class AccelerateSFTTrainer(AccelerateRLTrainer):
     def prepare_learning(self):
         self.train_dataloader = self.create_train_dataloader()
         eval_dataloader = self.eval_pipeline.create_loader(self.config.train.batch_size)
-
+        
+        # with enable_wrap(wrapper_cls=FSDP):
+        #     self.model = wrap(self.model)
+        
+        print("Here1")
+        
+        if self.accelerator.is_main_process:
+            import IPython; IPython.embed(); exit()
+        else:
+            import time as time_import
+            print("sleeping")
+            while True:
+                time_import.sleep(1)
+        
         (
             self.model,
             self.opt,
             self.eval_dataloader,
         ) = self.accelerator.prepare(self.model, self.opt, eval_dataloader)
+        
+        print("Here2")
 
         self.n_inner_epochs = 1
         self.total_steps = self.config.train.epochs * len(self.train_dataloader)

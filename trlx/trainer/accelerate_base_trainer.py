@@ -205,15 +205,15 @@ class AccelerateRLTrainer(BaseRLTrainer):
             **self.config.optimizer.kwargs,
         )
 
-        if "bitsandbytes" in optimizer.__class__.__module__:
-            # Force 32-bit `nn.Embedding` weights for stability. See discussion:
-            # https://github.com/huggingface/transformers/issues/14819#issuecomment-1016017746
-            from bitsandbytes.optim import GlobalOptimManager
+        # if "bitsandbytes" in optimizer.__class__.__module__:
+        #     # Force 32-bit `nn.Embedding` weights for stability. See discussion:
+        #     # https://github.com/huggingface/transformers/issues/14819#issuecomment-1016017746
+        #     from bitsandbytes.optim import GlobalOptimManager
 
-            manager = GlobalOptimManager.get_instance()
-            for module in self.model.modules():
-                if isinstance(module, torch.nn.Embedding):
-                    manager.register_module_override(module, "weight", {"optim_bits": 32})
+        #     manager = GlobalOptimManager.get_instance()
+        #     for module in self.model.modules():
+        #         if isinstance(module, torch.nn.Embedding):
+        #             manager.register_module_override(module, "weight", {"optim_bits": 32})
 
         return optimizer
 
@@ -307,6 +307,15 @@ class AccelerateRLTrainer(BaseRLTrainer):
 
         kwargs = dict(self.generate_kwargs, **kwargs)
 
+
+        # if self.accelerator.is_main_process:
+        #     import IPython; IPython.embed(); exit()
+        # else:
+        #     import time as time_import
+        #     print("sleeping")
+        #     while True:
+        #         time_import.sleep(1)
+    
         with torch.no_grad():
             return self.accelerator.unwrap_model(self.model).generate(
                 input_ids=input_ids, attention_mask=attention_mask, **kwargs
@@ -546,7 +555,7 @@ class AccelerateRLTrainer(BaseRLTrainer):
         stats = {}
         table = []
 
-        for i_sweep, gen_sweep_value in enumerate(gen_sweep_values):
+        for i_sweep, gen_sweep_value in enumerate(gen_sweep_values): 
             # A dedicated suffix for wandb logging
             if gen_sweep_value is not None:
                 sweep_suffix = f"@{gen_sweep_arg}={gen_sweep_value}"
@@ -558,6 +567,16 @@ class AccelerateRLTrainer(BaseRLTrainer):
             all_prompt_sizes = []
             all_metadata = []
             generate_time = time()
+            
+            # if self.accelerator.is_main_process:
+            #     for i_prompt, prompts in enumerate(self.eval_dataloader):
+            #         print(prompts)
+            # else:
+            #     import time as time_import
+            #     print("sleeping")
+            #     while True:
+            #         time_import.sleep(1)
+                    
             for i_prompt, prompts in enumerate(self.eval_dataloader):
                 metadata = {k: v for k, v in prompts.items() if k != "input_ids" and k != "attention_mask"}
                 if self.generate_sweep_kwarg:
@@ -717,7 +736,7 @@ class AccelerateRLTrainer(BaseRLTrainer):
         Samples batches from `self.store`, updates model and periodically evaluates it on `self.eval_dataloader`
         """
         logger.info("Starting training")
-
+        
         self.prepare_learning()
         self.iter_count = 0
         self.nth_evaluation = 0
@@ -761,7 +780,6 @@ class AccelerateRLTrainer(BaseRLTrainer):
                     forward_time = 0.0
                     backward_time = 0.0
                     stats_accum = []
-                    assert(len(minibatch) == 1)
                     for microbatch in minibatch:
                         with self._accumulate():
                             forward_time -= time()
